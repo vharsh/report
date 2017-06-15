@@ -46,14 +46,13 @@ func main() {
 
 	// 2. Add missing data
 	if *repo_url == "" {
-		fmt.Print("Repository URL: ")
+		fmt.Print("Enter organization/repository ")
 		fmt.Scanf("%s", repo_url)
 	}
 	// get the org_name and the project name
-	l := strings.Split(*repo_url, "github.com")[1]
-	q := strings.Split(l, "/")
-	org = q[1]
-	project = q[2]
+	q := strings.Split(*repo_url, "/")
+	org = q[0]
+	project = q[1]
 
 	if *logfile == "" {
 		fmt.Print("Log-file: ")
@@ -73,5 +72,8 @@ func main() {
 	j := github.IssueRequest{
 		Title: title,
 		Body:  desc}
-	client.Issues.Create(ctx, org, project, &j)
+	issue_struct, _, err := client.Issues.Create(ctx, org, project, &j)
+	if err == nil {
+		fmt.Println("Issue#", issue_struct.ID, " created")
+	}
 }
