@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/google/go-github/github"
@@ -13,17 +14,16 @@ import (
 )
 
 var (
-	logfile  *string
 	repo_url *string
 	title    *string
 	desc     *string
+	cmd      *string
 )
 
 // facilitates CLI arguments
 func init() {
 	// TODO Check for preset env variables like GITHUB_TOKEN, terminate if absent
 
-	logfile = flag.String("send", "", "a string")  // a logfile
 	repo_url = flag.String("repo", "", "a string") // the project
 	title = flag.String("title", "", "a string")
 	desc = flag.String("desc", "", "a string")
@@ -54,11 +54,6 @@ func main() {
 	org = q[0]
 	project = q[1]
 
-	if *logfile == "" {
-		fmt.Print("Log-file: ")
-		fmt.Scanf("%s", logfile)
-	}
-
 	if *title == "" {
 		fmt.Print("Issue title: ")
 		*title, _ = reader.ReadString('\n')
@@ -68,12 +63,37 @@ func main() {
 		fmt.Println("Issue description:")
 		*desc, _ = reader.ReadString('\n')
 	}
-
+	// Creates an issue
 	j := github.IssueRequest{
 		Title: title,
 		Body:  desc}
 	issue_struct, _, err := client.Issues.Create(ctx, org, project, &j)
 	if err == nil {
-		fmt.Println("Issue#", issue_struct.ID, " created")
+		fmt.Println("Issue#", *issue_struct.ID, " created")
+	}
+
+	// Capture some output
+	if len(flag.Args()) != 0 {
+		fmt.Println(flag.Args(), " will be executed")
+		// TODO get rid of arg
+		arg := flag.Args()[:]
+		cmdObj := exec.Command(string(flag.Args()[0]), arg[1:]...)
+		logs, err := cmdObj.CombinedOutput()
+		stringlogs := string(logs)
+		if err != nil {
+			panic(err)
+		}
+		content := github.GistFile{
+			Filename: &flag.Args()[0],
+			// TODO Fix types from array of bytes to pointer to string
+			Content: &stringlogs,
+		}
+		m := make(map[github.GistFilename]github.GistFile)
+		m["logs"] = content
+		de, _ := reader.ReadString('\n')
+		g := github.Gist{
+			Description: &de,
+			Files:       m}
+		client.Gists.Create(ctx, &g)
 	}
 }
