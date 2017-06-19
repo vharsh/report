@@ -14,17 +14,19 @@ import (
 )
 
 var (
-	repo_url *string
-	title    *string
-	desc     *string
-	cmd      *string
+	repoURL *string
+	title   *string
+	desc    *string
+	cmd     *string
 )
 
 // facilitates CLI arguments
 func init() {
-	// TODO Check for preset env variables like GITHUB_TOKEN, terminate if absent
-
-	repo_url = flag.String("repo", "", "a string") // the project
+	if os.Getenv("GITHUB_USER") == "" {
+		fmt.Fprintln(os.Stderr, "Get a Github personal access token and create an environment variable GITHUB_USER and try again.")
+		fmt.Println("You can create one right here https://github.com/settings/tokens")
+	}
+	repoURL = flag.String("repo", "", "a string") // the project
 	title = flag.String("title", "", "a string")
 	desc = flag.String("desc", "", "a string")
 	flag.Parse()
@@ -45,12 +47,12 @@ func main() {
 	client := github.NewClient(tc)
 
 	// 2. Add missing data
-	if *repo_url == "" {
-		fmt.Print("Enter organization/repository ")
-		fmt.Scanf("%s", repo_url)
+	if *repoURL == "" {
+		fmt.Print("Enter organization/repository: ")
+		fmt.Scanf("%s", repoURL)
 	}
 	// get the org_name and the project name
-	q := strings.Split(*repo_url, "/")
+	q := strings.Split(*repoURL, "/")
 	org = q[0]
 	project = q[1]
 
@@ -67,9 +69,9 @@ func main() {
 	j := github.IssueRequest{
 		Title: title,
 		Body:  desc}
-	issue_struct, _, err := client.Issues.Create(ctx, org, project, &j)
+	issueStruct, _, err := client.Issues.Create(ctx, org, project, &j)
 	if err == nil {
-		fmt.Println("Issue#", *issue_struct.ID, " created")
+		fmt.Println("Issue#", *issueStruct.ID, " created")
 	}
 
 	// Capture some output
@@ -90,6 +92,7 @@ func main() {
 		}
 		m := make(map[github.GistFilename]github.GistFile)
 		m["logs"] = content
+		fmt.Print("Add some description: ")
 		de, _ := reader.ReadString('\n')
 		g := github.Gist{
 			Description: &de,
