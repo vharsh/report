@@ -97,6 +97,10 @@ func main() {
 		g := github.Gist{
 			Description: &de,
 			Files:       m}
-		client.Gists.Create(ctx, &g)
+		gistRet, _, errRet := client.Gists.Create(ctx, &g)
+		fmt.Println(*gistRet.HTMLURL)
+		if errRet != nil {
+			panic(errRet)
+		}
 	}
 }
