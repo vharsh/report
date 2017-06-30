@@ -25,6 +25,7 @@ func init() {
 	if os.Getenv("GITHUB_USER") == "" {
 		fmt.Fprintln(os.Stderr, "Get a Github personal access token and create an environment variable GITHUB_USER and try again.")
 		fmt.Println("You can create one right here https://github.com/settings/tokens")
+		os.Exit(2)
 	}
 	repoURL = flag.String("repo", "", "a string") // the project
 	title = flag.String("title", "", "a string")
@@ -71,7 +72,7 @@ func main() {
 		Body:  desc}
 	issueStruct, _, err := client.Issues.Create(ctx, org, project, &j)
 	if err == nil {
-		fmt.Println("Issue#", *issueStruct.ID, " created")
+		fmt.Println("Issue ", *issueStruct.HTMLURL, " created")
 	}
 
 	// Capture some output
